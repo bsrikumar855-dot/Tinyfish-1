@@ -1,0 +1,46 @@
+{
+ "type": "COMPLETE",
+ "run_id": "8866acee-0e03-4cac-bd10-187bd57fb9ac",
+ "status": "COMPLETED",
+ "timestamp": "2026-11-15T05:31:35.905Z",
+ "result": {
+  "course_listing_description": {
+   "pagination": "The course listing is not paginated; it uses a single scrollable list of courses (infinite scroll approach).",
+   "filters": "The page has filter options including: Discipline (e.g., Aerospace Engineering, Biotechnology), Institute (e.g., IIT Bombay, IIT Delhi), and Course Type (Video, Web).",
+   "search": "There are two search boxes: one for searching courses by name and one for searching by instructor name."
+  },
+  "course_detail_url_pattern": "https://nptel.ac.in/courses/[course_id]",
+  "first_5_courses": [
+   {
+    "title": "NOC:Introduction To Aerospace Engineering",
+    "discipline": "Aerospace Engineering",
+    "institute": "IIT Bombay",
+    "link": "https://nptel.ac.in/courses/101101079"
+   },
+   {
+    "title": "NOC:Introduction To Aircraft Design",
+    "discipline": "Aerospace Engineering",
+    "institute": "IIT Bombay",
+    "link": "https://nptel.ac.in/courses/101101083"
+   },
+   {
+    "title": "NOC:Elements Of Mechanical Vibration",
+    "discipline": "Aerospace Engineering",
+    "institute": "IIT Delhi",
+    "link": "https://nptel.ac.in/courses/101102090"
+   },
+   {
+    "title": "NOC:Computational Fluid Dynamics Using The Finite Element Method",
+    "discipline": "Aerospace Engineering",
+    "institute": "IIT Bombay",
+    "link": "https://nptel.ac.in/courses/101104001"
+   },
+   {
+    "title": "NOC:Introduction To Airplane Performance",
+    "discipline": "Aerospace Engineering",
+    "institute": "IIT Kanpur",
+    "link": "https://nptel.ac.in/courses/101104061"
+   }
+  ]
+ }
+}

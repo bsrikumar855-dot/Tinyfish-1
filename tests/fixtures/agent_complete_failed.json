@@ -1,0 +1,9 @@
+{
+ "type": "COMPLETE",
+ "run_id": "393750c7-fc60-4dba-8cac-a34730e33d78",
+ "status": "FAILED",
+ "timestamp": "2026-11-15T05:32:01.950Z",
+ "error": "Something went wrong on our side while running this task. Please retry; contact support if it persists.",
+ "help_url": "https://docs.tinyfish.ai/error-codes",
+ "help_message": "Need help? See our error reference for troubleshooting tips."
+}
