@@ -1,6 +1,6 @@
 {
   "name": "nptel-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server that turns the NPTEL course catalogue into typed agent tools, powered by TinyFish Agent and Fetch",
   "type": "module",
   "bin": {

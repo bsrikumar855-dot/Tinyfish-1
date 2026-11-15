@@ -23,10 +23,18 @@ export const CourseDetails = z.object({
   schedule: z.string().nullable(),
   url: z.string().url(),
   available_sections: z.array(z.string()),
+  /** Enrollment window as YYYY-MM-DD, when found. */
+  enrollment_start: z.string().nullable().default(null),
+  enrollment_end: z.string().nullable().default(null),
+  /** Enrollment status computed at call time (IST date) from the enrollment window; "unknown" when dates are unavailable. */
+  status: z.enum(["open", "closed", "upcoming", "unknown"]).default("unknown"),
+  status_basis: z.string().nullable().default(null),
+  /** Where the syllabus text came from: NPTEL's own syllabus PDF (via Fetch) or an Agent run on the Syllabus tab. */
+  syllabus_source: z.enum(["nptel_syllabus_pdf", "agent_syllabus_tab"]).nullable().default(null),
   /** Of discipline/syllabus/duration/schedule: the ones that could not be found (null in this object). */
   fields_unavailable: z.array(z.string()).default([]),
-  /** "ok" = Agent enrichment ran; "failed" = attempted and failed (see enrichment_error); "skipped" = not attempted. */
-  enrichment: z.enum(["ok", "failed", "skipped"]).default("skipped"),
+  /** "ok" = syllabus, duration and schedule all found; "partial" = some found; "failed" = none found / Agent failed; "skipped" = Agent not run (enrich=false). */
+  enrichment: z.enum(["ok", "partial", "failed", "skipped"]).default("skipped"),
   enrichment_error: z.string().nullable().default(null),
 });
 export type CourseDetails = z.infer<typeof CourseDetails>;

@@ -16,16 +16,26 @@ const checks: [string, () => Promise<string>][] = [
     if (!r.every((c) => c.url.startsWith("https://nptel.ac.in/courses/"))) throw new Error("result URL outside nptel.ac.in");
     return `${r.length} results, first: ${r[0].course_id} ${r[0].title} | ${r[0].institute}`;
   }],
+  ["search_courses (relevance, IIT Madras)", async () => {
+    const r = await searchCourses({ query: "machine learning", institute: "IIT Madras", limit: 10, refresh: true });
+    if (r.length === 0) throw new Error("0 results for known-good query 'machine learning' + IIT Madras - FAILURE, not an empty list");
+    const noise = r.filter((c) => ["102106023", "117106030", "106101060"].includes(c.course_id)).map((c) => c.title);
+    if (noise.length) throw new Error(`irrelevant hits survived the relevance filter: ${noise.join("; ")}`);
+    return `${r.length} results, none of the known noise hits`;
+  }],
   ["get_course (Fetch)", async () => {
     const c = await getCourse({ course_id: KNOWN_ID, refresh: true, enrich: false });
     if (c.institute !== "IIT Bombay" || c.instructors.length === 0) throw new Error(`unexpected content: ${JSON.stringify(c)}`);
-    return `${c.title} | ${c.institute}`;
+    if (c.discipline !== "Aerospace Engineering") throw new Error(`discipline from id prefix is ${c.discipline}`);
+    return `${c.title} | ${c.institute} | ${c.discipline} | syllabus=${c.syllabus ? "yes" : "no"}`;
   }],
-  ["get_course (Agent enrichment)", async () => {
-    const c = await getCourse({ course_id: KNOWN_ID, refresh: true, enrich: true });
+  ["get_course (syllabus + enrichment, 106106139)", async () => {
+    const c = await getCourse({ course_id: "106106139", refresh: true, enrich: true });
+    if (!c.syllabus || (c.syllabus.match(/^Week \d+/gm) ?? []).length < 10) throw new Error(`week-by-week syllabus missing (source=${c.syllabus_source})`);
+    if (c.discipline !== "Computer Science And Engineering") throw new Error(`discipline ${c.discipline}`);
     if (c.enrichment === "failed") throw new NptelError("TINYFISH_FAILED", c.enrichment_error ?? "enrichment failed", "get_course");
-    if (!c.duration) throw new NptelError("TINYFISH_FAILED", "enrichment found no duration", "get_course");
-    return `enrichment=${c.enrichment}; fields_unavailable=[${c.fields_unavailable.join(", ")}]; duration=${c.duration}`;
+    if (c.status === "unknown") throw new NptelError("TINYFISH_FAILED", `enrichment found no enrollment dates, so status is unknown (${c.enrichment_error ?? c.enrichment})`, "get_course"); // duration is reported but not required: the Agent returns it in only some runs
+    return `enrichment=${c.enrichment}; duration=${c.duration}; status=${c.status} (${c.status_basis}); syllabus from ${c.syllabus_source}; fields_unavailable=[${c.fields_unavailable.join(", ")}]`;
   }],
   ["get_course (NOT_FOUND path)", async () => {
     try { await getCourse({ course_id: "000000000", refresh: true, enrich: false }); } catch (e) {

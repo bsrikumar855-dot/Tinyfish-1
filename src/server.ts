@@ -19,21 +19,21 @@ async function wrap(fn: () => Promise<unknown>) {
 server.registerTool("search_courses", {
   description:
     "Search the NPTEL course catalogue by keywords, optionally narrowed by institute. Use this FIRST to find course_ids. " +
-    "Uses TinyFish Search + Fetch (about 5-15 s); repeated searches are cached. Discipline in results is null (not shown on NPTEL detail pages).",
+    "Uses TinyFish Search + Fetch (about 3-15 s); repeated searches are cached. Hits that share no term with the query are dropped. Discipline comes from the course-id prefix (NPTEL's own discipline labels).",
   inputSchema: searchCoursesInput,
 }, (a) => wrap(() => searchCourses(a)));
 
 server.registerTool("get_course", {
   description:
-    "Get details of ONE NPTEL course by its 9-digit course_id (from search_courses): title, institute, instructors, and - via one TinyFish Agent enrichment run (up to 120 s) - " +
-    "discipline, syllabus, duration and schedule when the page shows them. Anything not found is null and listed in fields_unavailable; never guessed. Pass enrich=false for a fast Fetch-only answer.",
+    "Get details of ONE NPTEL course by its 9-digit course_id (from search_courses): title, institute, instructors, discipline, week-by-week syllabus (from NPTEL's syllabus PDF), and - via TinyFish Agent (up to 120 s) - duration, schedule and enrollment dates. " +
+    "status (open/closed/upcoming/unknown) is computed from the enrollment window against today. Anything not found is null and listed in fields_unavailable; enrichment is ok/partial/failed. Pass enrich=false for a fast Fetch-only answer.",
   inputSchema: getCourseInput,
 }, (a) => wrap(() => getCourse(a)));
 
 server.registerTool("compare_courses", {
   description:
-    "Compare 2-5 NPTEL courses side by side (title, institute, instructors, duration, schedule, syllabus) by calling get_course for each id. " +
-    "Returns per-field values and which fields differ. Fast by default (Fetch only); pass enrich=true to include Agent-enriched duration/schedule/syllabus (slow). Use after search_courses when the user is choosing between courses.",
+    "Compare 2-5 NPTEL courses side by side (title, institute, discipline, instructors, status, duration, schedule, syllabus) by calling get_course for each id. " +
+    "Returns per-field values and which fields differ. Fast by default (Fetch only); pass enrich=true to include Agent-enriched duration/schedule/status (slow). Use after search_courses when the user is choosing between courses.",
   inputSchema: compareCoursesInput,
 }, (a) => wrap(() => compareCourses(a)));
 

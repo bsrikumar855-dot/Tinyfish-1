@@ -5,7 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { NptelError } from "../src/errors.js";
 import { parseFetchResponse, parseSse, resultFromEvents } from "../src/tinyfish.js";
-import { buildComparison, courseIdFromLink, parseDetailText, parseSearchApi } from "../src/tools.js";
+import { disciplineFromId } from "../src/disciplines.js";
+import { buildComparison, computeStatus, courseIdFromLink, datesFromSchedule, isRelevant, parseDetailText, parseSearchApi, parseSyllabusText, searchTerms } from "../src/tools.js";
 
 const fx = (n: string) => JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", n), "utf8"));
 
@@ -68,7 +69,7 @@ describe("Agent event handling (real fixtures)", () => {
 describe("search_courses parsing (real Search API fixture)", () => {
   const raw = fx("search_machine_learning.json");
   it("extracts unique 9-digit course ids in relevance order", () => {
-    const ids = parseSearchApi(raw);
+    const ids = parseSearchApi(raw).map((h) => h.id);
     expect(ids[0]).toBe("106106202");
     expect(ids).toContain("106106139");
     expect(new Set(ids).size).toBe(ids.length);
@@ -81,7 +82,7 @@ describe("search_courses parsing (real Search API fixture)", () => {
     }
   });
   it("drops results not on nptel.ac.in", () => {
-    const ids = parseSearchApi({ results: [{ url: "https://evil.example.com/courses/111111111" }, { url: "https://nptel.ac.in/courses/222222222" }, { url: "https://nptel.ac.in.evil.com/courses/333333333" }] });
+    const ids = parseSearchApi({ results: [{ url: "https://evil.example.com/courses/111111111" }, { url: "https://nptel.ac.in/courses/222222222" }, { url: "https://nptel.ac.in.evil.com/courses/333333333" }] }).map((h) => h.id);
     expect(ids).toEqual(["222222222"]);
   });
   it("courseIdFromLink", () => {
@@ -102,5 +103,84 @@ describe("compare_courses builder", () => {
     const cmp = buildComparison([a, b]);
     expect(cmp.fields.find((f) => f.field === "institute")?.differs).toBe(true);
     expect(cmp.summary).toMatch(/syllabus/);
+  });
+});
+
+// ---------------- new in 0.1.2 ----------------
+const pageText = (id: string) =>
+  fx("fetch_relevance_pages.json").results.find((r: { url: string }) => r.url.endsWith(id)).text as string;
+
+describe("search relevance (REAL Search + Fetch fixtures for 'machine learning' + IIT Madras)", () => {
+  // Real response: besides ML courses it contains Computational Neuroscience (102106023), Analog IC Design (117106030)
+  // and Design and Analysis of Algorithms (106101060), which matched only on "IIT Madras"/"IIT Bombay".
+  const hits = parseSearchApi(fx("search_machine_learning_iit_madras.json"));
+  const verdict = (id: string) => {
+    const d = parseDetailText(id, pageText(id));
+    return isRelevant("machine learning", { title: d.title, instructors: d.instructors, snippet: hits.find((h) => h.id === id)!.snippet });
+  };
+  it("drops the Computational Neuroscience and Analog IC Design noise hits", () => {
+    expect(hits.map((h) => h.id)).toEqual(expect.arrayContaining(["102106023", "117106030"]));
+    expect(verdict("102106023")).toBe(false);
+    expect(verdict("117106030")).toBe(false);
+    expect(verdict("106101060")).toBe(false);
+  });
+  it("keeps genuine machine-learning courses", () => {
+    expect(verdict("106106139")).toBe(true);
+    expect(verdict("106106213")).toBe(true);
+    expect(verdict("106106245")).toBe(true);
+  });
+  it("keeps a hit whose title shares no term when the snippet contains every query term", () => {
+    expect(isRelevant("machine learning", { title: "Course Details", instructors: [], snippet: "an introduction to machine learning methods" })).toBe(true);
+    expect(isRelevant("machine learning", { title: "Course Details", instructors: [], snippet: "an introduction to learning" })).toBe(false);
+  });
+  it("treats plurals alike and ignores stopwords", () => {
+    expect(searchTerms("Introduction to Machines and the Learning")).toEqual(["machine", "learning"]);
+  });
+});
+
+describe("syllabus parsing (REAL syllabus PDF fixture via Fetch, course 106106139)", () => {
+  const pdf = fx("fetch_syllabus_pdf_106106139.json");
+  it("extracts the week-by-week COURSE PLAN and drops the footer title", () => {
+    const s = parseSyllabusText(pdf.results[0].text)!;
+    expect(s.split("\n")[0]).toMatch(/^Week 0: Probability Theory/);
+    expect((s.match(/^Week \d+/gm) ?? []).length).toBe(13);
+    expect(s).not.toMatch(/INTRODUCTION TO MACHINE/);
+  });
+  it("a missing PDF is reported by Fetch as target_unreachable (real entry), and an abstract alone is not a syllabus", () => {
+    expect(pdf.errors[0].error).toBe("target_unreachable");
+    expect(parseSyllabusText("ABOUT THE COURSE : something long enough but no weeks at all here")).toBeNull();
+  });
+});
+
+describe("discipline from course id prefix (mapping read from the live listing on 2026-11-15)", () => {
+  it("maps known prefixes", () => {
+    expect(disciplineFromId("106106139")).toBe("Computer Science And Engineering");
+    expect(disciplineFromId("101101079")).toBe("Aerospace Engineering");
+    expect(disciplineFromId("117106030")).toBe("Electronics & Communication Engineering");
+    expect(disciplineFromId("102106023")).toBe("Biotechnology");
+  });
+  it("returns null only for an unmapped prefix", () => {
+    expect(disciplineFromId("125101001")).toBeNull();
+    expect(disciplineFromId("999999999")).toBeNull();
+  });
+  it("is applied by the page parser", () => {
+    expect(parseDetailText("106106139", pageText("106106139")).discipline).toBe("Computer Science And Engineering");
+  });
+});
+
+describe("enrollment status", () => {
+  it("open / upcoming / closed from the window, inclusive of both ends", () => {
+    expect(computeStatus("2026-05-22", "2026-07-27", "2026-05-21").status).toBe("upcoming");
+    expect(computeStatus("2026-05-22", "2026-07-27", "2026-05-22").status).toBe("open");
+    expect(computeStatus("2026-05-22", "2026-07-27", "2026-07-27").status).toBe("open");
+    expect(computeStatus("2026-05-22", "2026-07-27", "2026-07-28").status).toBe("closed");
+  });
+  it("unknown when dates are missing or malformed", () => {
+    expect(computeStatus(null, null, "2026-11-15").status).toBe("unknown");
+    expect(computeStatus("22/05/2026", "2026-07-27", "2026-11-15").status).toBe("unknown");
+  });
+  it("reads the enrollment window from a schedule text (real live text)", () => {
+    const s = "Enrollment : 2026-05-22 to 2026-07-27, Exam Registration : 2026-06-20 to 2026-08-14, Exam Date : 2026-10-18";
+    expect(datesFromSchedule(s)).toEqual({ start: "2026-05-22", end: "2026-07-27" });
   });
 });
