@@ -24,6 +24,7 @@ const checks: [string, () => Promise<string>][] = [
   ["get_course (Agent enrichment)", async () => {
     const c = await getCourse({ course_id: KNOWN_ID, refresh: true, enrich: true });
     if (c.enrichment === "failed") throw new NptelError("TINYFISH_FAILED", c.enrichment_error ?? "enrichment failed", "get_course");
+    if (!c.duration) throw new NptelError("TINYFISH_FAILED", "enrichment found no duration", "get_course");
     return `enrichment=${c.enrichment}; fields_unavailable=[${c.fields_unavailable.join(", ")}]; duration=${c.duration}`;
   }],
   ["get_course (NOT_FOUND path)", async () => {

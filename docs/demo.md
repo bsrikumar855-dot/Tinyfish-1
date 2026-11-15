@@ -1,12 +1,12 @@
 # Demo transcript
 
-This is a **real run** (2026-11-15) of the built server (`dist/server.js`) driven over stdio by a real MCP client (`scripts/demo.ts`, using `@modelcontextprotocol/sdk`). It is **not** a Claude chat: no LLM was in the loop, the calls are the search -> get -> compare chain an agent would make, each argument taken from the previous result. Reproduce with `npm run build && npx tsx scripts/demo.ts`. All calls used `refresh: true` (cache bypassed) except the last.
+A **real run** (2026-11-15) of the built server (`dist/server.js`) driven over stdio by a real MCP client (`scripts/demo.ts`, using `@modelcontextprotocol/sdk`). It is **not** a Claude chat: no LLM was in the loop; the calls are the search -> get -> compare chain an agent would make, with each argument taken from the previous result. Reproduce: `npm run build && npx tsx scripts/demo.ts`. `get_course` shows the Agent enrichment (35 s); `compare_courses` ran Fetch-only (default).
 
 ```
-TOOLS: search_courses, get_course, list_institutes, compare_courses 
+TOOLS: search_courses, get_course, compare_courses 
 
 >>> search_courses {"query":"machine learning","institute":"IIT Madras","limit":3,"refresh":true}
-<<< (4.3s)
+<<< (6.8s)
 [
   {
     "course_id": "106106139",
@@ -42,7 +42,7 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
 ]
 
 >>> get_course {"course_id":"106106139","refresh":true}
-<<< (2.5s)
+<<< (35.1s)
 {
   "course_id": "106106139",
   "title": "NOC: Introduction to Machine Learning",
@@ -51,9 +51,9 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
   "instructors": [
     "Prof. Balaraman Ravindran"
   ],
-  "syllabus": null,
-  "duration": null,
-  "schedule": null,
+  "syllabus": "With the increased availability of data from varied sources there has been increasing attention paid to the various data driven disciplines such as analytics and machine learning. In this course we intend to introduce some of the basic concepts of machine learning from a mathematically well motivated perspective. We will cover the different learning paradigms and some of the more popular algorithms and architectures used in each of these paradigms.",
+  "duration": "Jul-Oct 2026",
+  "schedule": "Enrollment: 2026-05-22 to 2026-07-27\nExam Registration: 2026-06-20 to 2026-08-14\nExam Date: 2026-10-18",
   "url": "https://nptel.ac.in/courses/106106139",
   "available_sections": [
     "about",
@@ -64,11 +64,16 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
     "toppers list",
     "certificate type",
     "Syllabus"
-  ]
+  ],
+  "fields_unavailable": [
+    "discipline"
+  ],
+  "enrichment": "ok",
+  "enrichment_error": null
 }
 
 >>> compare_courses {"course_ids":["106106139","106106236","106106213"],"refresh":true}
-<<< (1.3s)
+<<< (8.1s)
 {
   "courses": [
     {
@@ -92,7 +97,15 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
         "toppers list",
         "certificate type",
         "Syllabus"
-      ]
+      ],
+      "fields_unavailable": [
+        "discipline",
+        "syllabus",
+        "duration",
+        "schedule"
+      ],
+      "enrichment": "skipped",
+      "enrichment_error": null
     },
     {
       "course_id": "106106236",
@@ -115,7 +128,15 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
         "toppers list",
         "certificate type",
         "Syllabus"
-      ]
+      ],
+      "fields_unavailable": [
+        "discipline",
+        "syllabus",
+        "duration",
+        "schedule"
+      ],
+      "enrichment": "skipped",
+      "enrichment_error": null
     },
     {
       "course_id": "106106213",
@@ -139,7 +160,15 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
         "toppers list",
         "certificate type",
         "Syllabus"
-      ]
+      ],
+      "fields_unavailable": [
+        "discipline",
+        "syllabus",
+        "duration",
+        "schedule"
+      ],
+      "enrichment": "skipped",
+      "enrichment_error": null
     }
   ],
   "fields": [
@@ -207,11 +236,11 @@ TOOLS: search_courses, get_course, list_institutes, compare_courses
       "differs": false
     }
   ],
-  "summary": "Compared 3 courses. Differing fields: title, institute, instructors. Not shown on NPTEL for any of them: discipline, duration, schedule, syllabus."
+  "summary": "Compared 3 courses. Differing fields: title, institute, instructors. Unavailable for all of them (enrich=false skips duration/schedule/syllabus): discipline, duration, schedule, syllabus."
 }
 
 >>> get_course {"course_id":"000000000"}
-<<< ERROR (4.4s)
+<<< ERROR (4.0s)
 {
   "error": {
     "code": "NOT_FOUND",

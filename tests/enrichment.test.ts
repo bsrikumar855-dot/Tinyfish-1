@@ -68,6 +68,13 @@ describe("get_course enrichment path (forced via mocked Agent)", () => {
     }
   });
 
+  it("an Agent result with every field null is flagged suspect (failed), not silently ok", () => {
+    const c = applyEnrichment(base(), { discipline: null, syllabus: null, duration: null, schedule: null }, null);
+    expect(c.enrichment).toBe("failed");
+    expect(c.enrichment_error).toMatch(/SUSPECT/);
+    expect(c.fields_unavailable).toHaveLength(4);
+  });
+
   it("never overwrites a value already parsed from Fetch", () => {
     const b = { ...base(), duration: "from-fetch" };
     expect(applyEnrichment(b, { duration: "from-agent" }, null).duration).toBe("from-fetch");

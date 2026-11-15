@@ -144,6 +144,11 @@ export function applyEnrichment(base: CourseDetails, raw: unknown, error: string
       const v = p.data[f]?.trim();
       if (v && base[f] === null) merged[f] = v;
     }
+    if (ENRICHABLE.every((f) => merged[f] === null)) {
+      // COMPLETED but found nothing: NPTEL course pages normally show a duration, so treat as suspect, not as a clean result.
+      status = "failed";
+      err = "SUSPECT: Agent run completed but returned none of discipline/syllabus/duration/schedule";
+    }
   }
   const fields_unavailable = ENRICHABLE.filter((f) => merged[f] === null);
   return CourseDetails.parse({ ...merged, fields_unavailable, enrichment: status, enrichment_error: err });
@@ -250,7 +255,7 @@ export function buildComparison(courses: CourseDetails[]): Comparison {
   const unknown = fields.filter((f) => Object.values(f.values).every((v) => v === null)).map((f) => f.field);
   return Comparison.parse({
     courses, fields,
-    summary: `Compared ${courses.length} courses. Differing fields: ${diff.join(", ") || "none"}. Not shown on NPTEL for any of them: ${unknown.join(", ") || "none"}.`,
+    summary: `Compared ${courses.length} courses. Differing fields: ${diff.join(", ") || "none"}. Unavailable for all of them (enrich=false skips duration/schedule/syllabus): ${unknown.join(", ") || "none"}.`,
   });
 }
 
