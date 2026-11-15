@@ -1,6 +1,6 @@
 {
   "name": "nptel-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server that turns the NPTEL course catalogue into typed agent tools, powered by TinyFish Agent and Fetch",
   "type": "module",
   "bin": {
@@ -32,5 +32,14 @@
     "tsx": "^4.0.0",
     "typescript": "^5.9.0",
     "vitest": "^3.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsrikumar855-dot/Tinyfish-1.git"
+  },
+  "homepage": "https://github.com/bsrikumar855-dot/Tinyfish-1#readme",
+  "bugs": {
+    "url": "https://github.com/bsrikumar855-dot/Tinyfish-1/issues"
   }
 }

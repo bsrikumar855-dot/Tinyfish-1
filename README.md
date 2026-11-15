@@ -81,3 +81,7 @@ Prints `PASS` / `WARN` / `FAIL` per check. Exit **0** all pass; **1** any FAIL (
 - Agent enrichment is slow and TinyFish Agent runs sometimes fail with an internal error (run ids in `docs/site-notes.md`); then `enrichment: "failed"` and the fields are listed in `fields_unavailable`.
 - Search quality is TinyFish Search relevance; institute filtering is applied to the first ~2x`limit` hits.
 - Not published to npm.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
